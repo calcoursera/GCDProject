@@ -37,7 +37,7 @@ DataTableTest <- data.table(datframetes)
 
 
 #join train and test files row-wise for subject and label; add descriptive names to the columns
-
+                                    
 SubjectTestTrainData <- rbind(SubjectTestData, SubjectTrainData)
 setnames(SubjectTestTrainData, "V1", "subject")
 LabelTestTrainData <- rbind(LabelTestData, LabelTrainData)
@@ -62,7 +62,7 @@ setnames(Featuresinfo, names(Featuresinfo), c("Index", "NameofFeature"))
 
 #search for mean (Mean) and std word patterns to identify the mean and standard deviation of the #feature measurements; and extract such std measurements
 
-Featuresinfo <- Featuresinfo[grepl("mean\\(\\)|std\\(\\)", NameofFeature)]
+Featuresinfo <- Featuresinfo[grepl("mean\\(\\)|Mean\\(\\)|std\\(\\)", NameofFeature)]
 
 #Match the columns before extracting subset
 
@@ -71,15 +71,17 @@ Featuresinfo$featureIndex <- Featuresinfo[, paste0("V", Index)]
 #head(SLDataTestTrain)
 #SLDataTestTrain$featureIndex
 #Extract the relevant columns
-  
+                                    
 relevant <- c(key(SLDataTestTrain), Featuresinfo$featureIndex)
 SLDataTestTrain <- SLDataTestTrain [, relevant, with=FALSE]                                  
-
+                                                                    
+                                    
 #read the activity labels file and add descriptive names to the columns
 
 ActivityNamesdata <- fread(file.path(wd, "activity_labels.txt"))
 setnames(ActivityNamesdata, names(ActivityNamesdata), c("activityNo", "activityName"))
-
+                                    
+                                    
 #merge the files based on the activityIndex
 #and make activityName as key
 
@@ -93,17 +95,29 @@ SLDataTestTrain <- data.table(melt(SLDataTestTrain, key(SLDataTestTrain), variab
 #Next, merge the Name of activities NameofFeature
 
 SLDataTestTrain <- merge(SLDataTestTrain, Featuresinfo[, list(Index, featureIndex, NameofFeature)], by="featureIndex", all.x=TRUE)
-
+                                    
 #Create new factor variables from activityName and NameofFeature
 
 SLDataTestTrain$activityFactor <- factor(SLDataTestTrain$activityName)
 SLDataTestTrain$featureFactor <- factor(SLDataTestTrain$NameofFeature)
 
+#write the cleaned up and labelled data to GCDProjData.txt
+
+write.table(SLDataTestTrain,file=".\ GCDProjData.txt")
+
 #create the tidy data set for each activity and subject with the average setkey(SLDataTestTrain, subject, activityFactor, featDomain, featAcceleration, featInstrument, featJerk, featMagnitude, featVariable, featAxis)
 
 TidyData <- SLDataTestTrain[, list(count = .N, average = mean(value)), by=key(SLDataTestTrain)]
-
+                                    
 #write the tidy data to a file GCDProjTidyData.txt
 
 write.table(TidyData, file = ".\ GCDProjTidyData.txt ",row.names = FALSE)
- 
+
+#generate codebooks for both GCDProjData.txt and GCDProjTidyData.txt
+
+capture.output (codebook(data.set(SLDataTestTrain)),file="codebook1.md")
+capture.output (codebook(data.set(TidyData)),file="codebook.md")
+
+
+
+                                    
